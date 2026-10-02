@@ -1,4 +1,4 @@
-import { Building2, Bus, HeartPulse, Megaphone, Utensils } from "lucide-react";
+import { Building2, Bus, Coffee, DoorOpen, HeartPulse, Megaphone, Utensils } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { API_BASE } from "@/lib/api";
@@ -12,6 +12,12 @@ type Doctor = { id: number; name: string; available_today: boolean; arrival_time
 const mealLabels = ["Breakfast", "Lunch", "Snacks", "Dinner"] as const;
 const mealKeys = ["breakfast", "lunch", "snacks", "dinner"] as const;
 
+const fetchPublicList = async <T,>(path: string): Promise<T[]> => {
+  const response = await fetch(`${API_BASE}${path}`);
+  if (!response.ok) throw new Error(`Could not load ${path}`);
+  return response.json() as Promise<T[]>;
+};
+
 const Landing = () => {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [messItems, setMessItems] = useState<MessItem[]>([]);
@@ -23,22 +29,21 @@ const Landing = () => {
   useEffect(() => {
     const loadPublicDashboard = async () => {
       try {
-        const [noticesResponse, messResponse, timetableResponse, doctorsResponse] = await Promise.all([
-          fetch(`${API_BASE}/api/notices`),
-          fetch(`${API_BASE}/api/mess`),
-          fetch(`${API_BASE}/api/timetable`),
-          fetch(`${API_BASE}/api/medical/doctors`),
+        const results = await Promise.allSettled([
+          fetchPublicList<Notice>("/api/notices"),
+          fetchPublicList<MessItem>("/api/mess"),
+          fetchPublicList<Timetable>("/api/timetable"),
+          fetchPublicList<Doctor>("/api/medical/doctors"),
         ]);
-        if (![noticesResponse, messResponse, timetableResponse, doctorsResponse].every((response) => response.ok)) {
-          throw new Error("Could not load public information");
+        const [noticesResult, messResult, timetableResult, doctorsResult] = results;
+        if (noticesResult.status === "fulfilled") setNotices(noticesResult.value);
+        if (messResult.status === "fulfilled") setMessItems(messResult.value);
+        if (timetableResult.status === "fulfilled") setTimetables(timetableResult.value);
+        if (doctorsResult.status === "fulfilled") setDoctors(doctorsResult.value);
+        if (results.some((result) => result.status === "rejected")) {
+          setError(true);
+          console.error("One or more public dashboard requests failed", results);
         }
-        setNotices(await noticesResponse.json());
-        setMessItems(await messResponse.json());
-        setTimetables(await timetableResponse.json());
-        setDoctors(await doctorsResponse.json());
-      } catch (loadError) {
-        console.error("Public dashboard load failed", loadError);
-        setError(true);
       } finally {
         setLoading(false);
       }
@@ -63,6 +68,17 @@ const Landing = () => {
       <section className="grid gap-4 md:grid-cols-2">
         <Card><CardHeader><CardTitle className="flex items-center gap-2"><Utensils className="h-5 w-5 text-primary" />{todayName}’s mess menu</CardTitle></CardHeader><CardContent className="grid gap-3 sm:grid-cols-2">{mealKeys.map((key, index) => <div key={key} className="rounded-md bg-secondary/60 p-3"><p className="text-sm font-medium">{mealLabels[index]}</p><p className="mt-1 text-sm text-muted-foreground">{todayMenu?.[key] || "Menu not published yet"}</p></div>)}</CardContent></Card>
         <Card><CardHeader><CardTitle className="flex items-center gap-2"><HeartPulse className="h-5 w-5 text-primary" />Medical availability</CardTitle></CardHeader><CardContent className="space-y-3">{availableDoctors.length ? availableDoctors.map((doctor) => <div key={doctor.id} className="rounded-md bg-secondary/60 p-3 text-sm"><p className="font-medium">{doctor.name}</p><p className="text-muted-foreground">Available today{doctor.arrival_time && doctor.leave_time ? ` · ${doctor.arrival_time}–${doctor.leave_time}` : ""}</p></div>) : <p className="text-sm text-muted-foreground">No doctor availability has been posted for today.</p>}</CardContent></Card>
+      </section>
+
+      <section aria-label="Daily hostel status" className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader><CardTitle className="flex items-center gap-2"><Coffee className="h-5 w-5 text-primary" />Night Canteen</CardTitle></CardHeader>
+          <CardContent><p className="text-sm text-muted-foreground">No Night Canteen menu has been published yet. Verified student contributions will appear here once the Night Canteen module is released.</p></CardContent>
+        </Card>
+        <Card>
+          <CardHeader><CardTitle className="flex items-center gap-2"><DoorOpen className="h-5 w-5 text-primary" />Facilities</CardTitle></CardHeader>
+          <CardContent><p className="text-sm text-muted-foreground">Facility availability has not been published yet. Live updates for hostel facilities will appear here when the Facilities module is released.</p></CardContent>
+        </Card>
       </section>
 
       <section className="grid gap-4 lg:grid-cols-3">
