@@ -1,96 +1,49 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { API_BASE } from "@/lib/api";
+
+interface Timetable {
+  id: number;
+  route_name: string;
+  schedule: string;
+}
 
 const BusTimetableView: React.FC = () => {
-  const routes = [
-    {
-      id: 1,
-      title: "Starts from Gram Panchayat Waranga till Panchsheel Square",
-      subtitle: "Scheduled from 08:00 AM till 08:35 PM",
-      times: [
-        "08:00 AM",
-        "09:10 AM",
-        "10:00 AM",
-        "10:40 AM",
-        "11:45 AM",
-        "12:30 PM",
-        "02:25 PM",
-        "03:30 PM",
-        "04:55 PM",
-        "06:00 PM",
-        "06:20 PM",
-        "08:35 PM",
-      ],
-    },
-    {
-      id: 2,
-      title: "Starts from Panchsheel Square till Gram Panchayat Waranga",
-      subtitle: "Scheduled from 06:55 AM till 07:30 PM",
-      times: [
-        "06:55 AM",
-        "08:00 AM",
-        "08:50 AM",
-        "09:10 AM",
-        "10:30 AM",
-        "11:10 AM",
-        "01:10 PM",
-        "02:15 PM",
-        "03:40 PM",
-        "04:45 PM",
-        "05:15 PM",
-        "07:30 PM",
-      ],
-    },
-  ];
+  const [routes, setRoutes] = useState<Timetable[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  const getHighlight = (time: string) => {
-    const now = new Date();
-    const [hourMin, period] = time.split(" ");
-    const [hour, minute] = hourMin.split(":").map(Number);
-    const date = new Date();
-    date.setHours(period === "PM" && hour !== 12 ? hour + 12 : hour);
-    date.setMinutes(minute);
-
-    const diff = Math.abs(now.getTime() - date.getTime()) / 60000;
-    return diff <= 20;
-  };
+  useEffect(() => {
+    fetch(`${API_BASE}/api/timetable`)
+      .then((response) => {
+        if (!response.ok) throw new Error("Failed to load timetable");
+        return response.json();
+      })
+      .then(setRoutes)
+      .catch((loadError) => {
+        console.error(loadError);
+        setError(true);
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
-    <div className="max-w-6xl mx-auto mt-8 p-4">
-      <h1 className="text-2xl font-bold text-center mb-8 text-gray-900 dark:text-gray-100">
-        Bus Timetable
-      </h1>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <main className="mx-auto max-w-6xl p-4 py-8">
+      <h1 className="mb-2 text-center text-2xl font-bold text-gray-900 dark:text-gray-100">Bus Timetable</h1>
+      <p className="mb-8 text-center text-sm text-muted-foreground">Latest routes published by the hostel administration.</p>
+      {loading && <p className="text-center text-sm text-muted-foreground">Loading timetable…</p>}
+      {error && <p className="text-center text-sm text-destructive">The timetable could not be loaded. Please try again later.</p>}
+      {!loading && !error && !routes.length && <p className="text-center text-sm text-muted-foreground">No bus routes have been published yet.</p>}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {routes.map((route) => (
-          <div
-            key={route.id}
-            className="bg-white dark:bg-gray-900 p-5 rounded-xl shadow-md border border-gray-200 dark:border-gray-700"
-          >
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
-              {route.title}
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              {route.subtitle}
-            </p>
-
-            <div className="space-y-3">
-              {route.times.map((t) => (
-                <div
-                  key={t}
-                  className={`text-lg font-semibold ${
-                    getHighlight(t)
-                      ? "text-orange-500 dark:text-orange-400"
-                      : "text-gray-900 dark:text-gray-100"
-                  }`}
-                >
-                  {t}
-                </div>
-              ))}
+          <article key={route.id} className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{route.route_name}</h2>
+            <div className="mt-4 whitespace-pre-wrap text-sm leading-7 text-gray-700 dark:text-gray-300">
+              {route.schedule.split(",").map((time) => time.trim()).filter(Boolean).join("\n") || "Schedule not published yet"}
             </div>
-          </div>
+          </article>
         ))}
       </div>
-    </div>
+    </main>
   );
 };
 

@@ -19,9 +19,8 @@ def role_required(*roles):
 
 
 @mess_bp.get("/mess")
-@jwt_required()
 def get_mess_schedule():
-    """Get the weekly mess schedule - visible to all authenticated users"""
+    """Get the weekly mess schedule. This shared information is public."""
     mess_items = Mess.query.all()
     return jsonify([
         {

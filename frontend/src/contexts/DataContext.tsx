@@ -652,9 +652,22 @@ const updateStudentRecord = async (recordId: number, updates: Partial<StudentRec
  };
  
   useEffect(() => {
-    // fetch data if token exists (logged in) or, optionally, always fetch public data
-    if (token) fetchAllData();
-  }, [token]);
+    // Public information is fetched by public pages. Keep private operational data
+    // out of anonymous requests and refresh it whenever the authenticated user changes.
+    if (user && token) {
+      fetchAllData();
+      return;
+    }
+
+    setIssues([]);
+    setNotices([]);
+    setMessItems([]);
+    setCategories([]);
+    setRepairers([]);
+    setDoctors([]);
+    setStudentRecords([]);
+    setLoading(false);
+  }, [user, token]);
 
   return (
     <DataContext.Provider

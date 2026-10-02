@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from 'recharts';
+import { API_BASE } from '@/lib/api';
 
 type AnalyticsResponse = {
   totals: {
@@ -38,7 +39,10 @@ export default function AdminAnalytics() {
     async function load() {
       setLoading(true);
       try {
-        const res = await fetch('/api/analytics');
+        const token = localStorage.getItem('access_token');
+        const res = await fetch(`${API_BASE}/api/analytics`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const payload = await res.json();
         if (!mounted) return;

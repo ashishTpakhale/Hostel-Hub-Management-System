@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { API_BASE } from "@/lib/api";
 
 export default function ProfileAvatar() {
   const { user, logout, refreshProfile } = useAuth();
@@ -72,8 +73,7 @@ export default function ProfileAvatar() {
 
     setSaving(true);
     try {
-      // Use relative path so dev proxy or same-origin works reliably
-      const res = await fetch("/auth/update-profile", {
+      const res = await fetch(`${API_BASE}/auth/update-profile`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

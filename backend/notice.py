@@ -1,5 +1,4 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required
 from model import db, Notice
 from issues import role_required 
 
@@ -7,7 +6,6 @@ notices_bp = Blueprint("notices", __name__, url_prefix="/api")
 
 
 @notices_bp.get("/notices")
-@jwt_required()
 def get_notices():
     notices = Notice.query.order_by(Notice.created_at.desc()).all()
     return jsonify([

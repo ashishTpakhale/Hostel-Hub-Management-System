@@ -3,7 +3,7 @@ import datetime
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_migrate import Migrate
-from flask_jwt_extended import JWTManager, jwt_required
+from flask_jwt_extended import JWTManager, jwt_required, get_jwt
 from model import db, User, Notice, WorkerInfo, Issue, Doctor, StudentMedical
 from sqlalchemy import func
 from auth import auth_bp
@@ -68,7 +68,11 @@ def get_categories():
     ])
 
 @app.route('/api/analytics')
+@jwt_required()
 def analytics():
+    if get_jwt().get("role") != "admin":
+        return jsonify({"error": "Admins only"}), 403
+
     total_users = int(db.session.query(func.count(User.id)).scalar() or 0)
     total_students = int(db.session.query(func.count(User.id)).filter(User.role == 'student').scalar() or 0)
     total_staff = int(db.session.query(func.count(User.id)).filter(User.role != 'student').scalar() or 0)

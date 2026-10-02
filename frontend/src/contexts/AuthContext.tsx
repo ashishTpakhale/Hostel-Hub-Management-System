@@ -17,6 +17,7 @@ interface AuthContextType {
   signup: (userData: any) => Promise<boolean>;
   logout: () => void;
   isAuthenticated: boolean;
+  isInitializing: boolean;
   refreshProfile: (token?: string) => Promise<void>; // new
 }
 
@@ -25,6 +26,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem("access_token"));
+  const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
@@ -39,11 +41,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
-    if (savedToken) {
-      setToken(savedToken);
-      // kick off an initial refresh (doesn't block render)
-      refreshProfile(savedToken).catch(() => {});
-    }
+    const hydrate = async () => {
+      if (savedToken) {
+        setToken(savedToken);
+        await refreshProfile(savedToken);
+      }
+      setIsInitializing(false);
+    };
+    hydrate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -146,6 +151,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signup,
         logout,
         isAuthenticated: !!user,
+        isInitializing,
         refreshProfile,
       }}
     >

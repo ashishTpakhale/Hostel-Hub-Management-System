@@ -5,8 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter as HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { DataProvider } from "./contexts/DataContext";
-import { lazy, Suspense, useEffect, useState } from "react";
-import ProfileAvatar from "@/components/ui/ProfileAvatar";
+import { lazy, Suspense } from "react";
 import Header from "@/components/ui/Header";
 
 // ✅ Added imports for bus timetable pages
@@ -30,15 +29,11 @@ const ProtectedRoute = ({
   children: React.ReactNode;
   allowedRoles: string[];
 }) => {
-  const { user, isAuthenticated } = useAuth();
-  const [loading, setLoading] = useState(true);
+  const { user, isAuthenticated, isInitializing } = useAuth();
 
-  useEffect(() => {
-    const timeout = setTimeout(() => setLoading(false), 400);
-    return () => clearTimeout(timeout);
-  }, [user]);
-
-  if (loading) return null;
+  if (isInitializing) {
+    return <div className="grid min-h-screen place-items-center">Loading…</div>;
+  }
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (user && !allowedRoles.includes(user.role))
     return <Navigate to="/dashboard" replace />;
