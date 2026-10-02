@@ -55,6 +55,23 @@ The system supports **JWT-based authentication**, **role-specific dashboards**, 
 
 ---
 
+## Portfolio highlights
+
+* JWT-based authentication with student, admin, and worker roles.
+* Protected dashboards for maintenance issues, notices, mess schedules, medical records, and bus timetables.
+* Server-side authorization prevents issue-creator impersonation, restricts workers to their assigned issues, and limits timetable changes to administrators.
+* Environment-driven setup supports local development through the Vite proxy and deployment through configuration.
+* Authentication smoke tests provide a repeatable regression check.
+
+### Role provisioning
+
+The application has three roles: `student`, `admin`, and `worker`. Students self-register.
+For a first local demo, set the optional `ADMIN_*` and `BOOTSTRAP_WORKER_*` values in
+`backend/.env`, then restart Flask. In normal operation, an authenticated admin creates
+additional workers from the Admin dashboard; the backend enforces the role for that route.
+
+---
+
 ## Screenshot
 
 <img width="1852" height="934" alt="image" src="https://github.com/user-attachments/assets/6b5e95d5-e0b7-4121-be1d-d6c686b8c3ae" />
@@ -91,7 +108,8 @@ source .venv/bin/activate  # on Linux/Mac
 # or .\.venv\Scripts\activate on Windows
 
 pip install -r requirements.txt
-flask db upgrade  # if migrations exist
+# Windows PowerShell: Copy-Item .env.example .env
+# Then set JWT_SECRET_KEY in .env to a long random value.
 python app.py
 ```
 
@@ -105,5 +123,18 @@ npm run dev
 
 Visit:
 
-* **Frontend:** `http://localhost:5173`
-* **Backend API:** `http://localhost:8080`
+* **Frontend:** `http://localhost:8080`
+* **Backend API:** `http://localhost:5000`
+
+### Configuration
+
+Use `backend/.env.example` as the template for backend secrets and allowed browser origins.
+Use `frontend/.env.example` to set `VITE_API_BASE_URL` for a deployed frontend; leave
+it empty locally so Vite proxies requests to Flask. Never commit real `.env` files.
+
+### Tests
+
+```bash
+cd backend
+python -m unittest discover -s tests
+```

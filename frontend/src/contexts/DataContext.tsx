@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { toast } from "sonner";
 import { useAuth } from "./AuthContext";
+import { API_BASE } from "@/lib/api";
 
-const API_BASE = "https://hostel-hub-management-system-production.up.railway.app";
 
 export interface Category {
   id: string;
@@ -348,7 +348,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return;
     }
     try {
-      const res = await fetch(`${API_BASE}/api/issues/${issueId}/downvote`, {
+      // The API exposes one toggle endpoint: posting again removes the existing vote.
+      const res = await fetch(`${API_BASE}/api/issues/${issueId}/upvote`, {
         method: "POST",
         headers,
         body: JSON.stringify({ userId: user.id }),

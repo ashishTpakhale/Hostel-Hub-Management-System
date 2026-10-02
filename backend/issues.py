@@ -2,11 +2,13 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt, get_jwt_identity
 from model import db, Issue, User
 import datetime
+from functools import wraps
 
 issues_bp = Blueprint("issues", __name__, url_prefix="/api")
 
 def role_required(*roles):
     def wrapper(fn):
+        @wraps(fn)
         def inner(*args, **kwargs):
             claims = get_jwt()
             if claims.get("role") not in roles:
@@ -44,17 +46,19 @@ def get_issues():
 @issues_bp.post("/issues")
 @role_required("student", "admin")
 def create_issue():
-    claims = get_jwt()
     data = request.get_json() or {}
 
     if not all([data.get("title"), data.get("description"), data.get("roomNumber")]):
         return jsonify({"error": "Missing fields"}), 400
 
+    creator = User.query.get(int(get_jwt_identity()))
+    if not creator:
+        return jsonify({"error": "User not found"}), 401
     issue = Issue(
         title=data["title"],
         description=data["description"],
         room_number=data["roomNumber"],
-        created_by=data['createdBy'],
+        created_by=creator.full_name,
     )
     db.session.add(issue)
     db.session.commit()
@@ -103,9 +107,14 @@ def update_issue(issue_id):
 def update_status(issue_id):
     data = request.get_json() or {}
     new_status = data.get("status")
+    if new_status not in {"Pending", "In Progress", "Resolved"}:
+        return jsonify({"error": "Invalid status"}), 400
+    worker_id = int(get_jwt_identity())
     if not new_status:
         return jsonify({"error": "Missing status"}), 400
     issue = Issue.query.get_or_404(issue_id)
+    if issue.assigned_to != worker_id:
+        return jsonify({"error": "Issue is not assigned to you"}), 403
     issue.status = new_status
     db.session.commit()
     return jsonify({"message": "Status updated"})
@@ -146,6 +155,8 @@ def assign_issue(issue_id):
         return jsonify({"error": "Missing assignee_id"}), 400
     issue = Issue.query.get_or_404(issue_id)
     assignee = User.query.get(assignee_id)
+    if not assignee or assignee.role != "worker":
+        return jsonify({"error": "Selected assignee is not a worker"}), 400
 
     issue.assigned_to = assignee_id
     issue.assigned_at = datetime.datetime.utcnow()

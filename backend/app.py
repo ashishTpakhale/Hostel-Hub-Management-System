@@ -3,7 +3,7 @@ import datetime
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_migrate import Migrate
-from flask_jwt_extended import JWTManager
+from flask_jwt_extended import JWTManager, jwt_required
 from model import db, User, Notice, WorkerInfo, Issue, Doctor, StudentMedical
 from sqlalchemy import func
 from auth import auth_bp
@@ -22,13 +22,24 @@ import re
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, supports_credentials=True, expose_headers=["Authorization"], origins=["https://hostel-hub-management-system-yzo8.onrender.com"])
+allowed_origins = [
+    origin.strip()
+    for origin in os.getenv(
+        "FRONTEND_ORIGINS",
+        "http://localhost:8080,https://hostel-hub-management-system-yzo8.onrender.com",
+    ).split(",")
+    if origin.strip()
+]
+CORS(app, supports_credentials=True, expose_headers=["Authorization"], origins=allowed_origins)
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(basedir, "database.db")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
+jwt_secret = os.getenv("JWT_SECRET_KEY")
+if not jwt_secret:
+    raise RuntimeError("JWT_SECRET_KEY is required. Copy backend/.env.example to backend/.env and set a secret.")
+app.config["JWT_SECRET_KEY"] = jwt_secret
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = datetime.timedelta(minutes=2000)
 app.config["JWT_REFRESH_TOKEN_EXPIRES"] = datetime.timedelta(days=7)
 
@@ -140,6 +151,7 @@ def analytics():
     return jsonify({'totals': totals, 'series': series})
 
 @app.route('/analyze_issue', methods=['POST'])
+@jwt_required()
 def analyze_issue():
     API_KEY = os.getenv("API_KEY")
     ENDPOINT = "https://api.perplexity.ai/chat/completions"
@@ -221,16 +233,38 @@ def analyze_issue():
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-        admin = User.query.filter_by(role="admin").first()
-        if not admin:
-            new_admin = User(
-                full_name="Admin",
-                email="admin@hostel.com",
-                password_hash=generate_password_hash("admin123"),
-                role="admin"
+
+        def bootstrap_user(email_key, password_key, role, name_key, worker_type=None):
+            """Create configured development staff exactly once; never overwrite accounts."""
+            email = (os.getenv(email_key) or "").strip().lower()
+            password = os.getenv(password_key)
+            if not email or not password or User.query.filter_by(email=email).first():
+                return
+
+            user = User(
+                full_name=(os.getenv(name_key) or role.title()).strip(),
+                email=email,
+                password_hash=generate_password_hash(password),
+                role=role,
             )
-            db.session.add(new_admin)
-            db.session.commit()
+            db.session.add(user)
+            db.session.flush()
+            if role == "worker":
+                db.session.add(WorkerInfo(
+                    user_id=user.id,
+                    worker_type=(worker_type or "General").strip(),
+                ))
+
+        # Useful for first local setup. In production, provision staff through admin tooling.
+        bootstrap_user("ADMIN_EMAIL", "ADMIN_PASSWORD", "admin", "ADMIN_NAME")
+        bootstrap_user(
+            "BOOTSTRAP_WORKER_EMAIL",
+            "BOOTSTRAP_WORKER_PASSWORD",
+            "worker",
+            "BOOTSTRAP_WORKER_NAME",
+            os.getenv("BOOTSTRAP_WORKER_TYPE"),
+        )
+        db.session.commit()
 
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)

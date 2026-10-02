@@ -5,21 +5,21 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter as HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { DataProvider } from "./contexts/DataContext";
-import Landing from "./pages/Landing";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import StudentDashboard from "./pages/StudentDashboard";
-import AdminDashboard from "./pages/AdminDashboard";
-import RepairerDashboard from "./pages/RepairerDashboard";
-import NotFound from "./pages/NotFound";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import ProfileAvatar from "@/components/ui/ProfileAvatar";
 import Header from "@/components/ui/Header";
 
 // ✅ Added imports for bus timetable pages
-import BusTimetableView from "@/components/BusTimetableView";
-import BusTimetableAdmin from "@/components/BusTimetableAdmin";
-import Medical from "./pages/Medical";
+const Landing = lazy(() => import("./pages/Landing"));
+const Login = lazy(() => import("./pages/Login"));
+const Signup = lazy(() => import("./pages/Signup"));
+const StudentDashboard = lazy(() => import("./pages/StudentDashboard"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const RepairerDashboard = lazy(() => import("./pages/RepairerDashboard"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const BusTimetableView = lazy(() => import("@/components/BusTimetableView"));
+const BusTimetableAdmin = lazy(() => import("@/components/BusTimetableAdmin"));
+const Medical = lazy(() => import("./pages/Medical"));
 
 const queryClient = new QueryClient();
 
@@ -73,6 +73,7 @@ const App = () => {
               <Header />
               <Toaster />
               <Sonner />
+              <Suspense fallback={<div className="grid min-h-screen place-items-center">Loading…</div>}>
               <Routes>
                 <Route path="/" element={<Landing />} />
                 <Route path="/login" element={<Login />} />
@@ -110,6 +111,7 @@ const App = () => {
 
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              </Suspense>
             </TooltipProvider>
           </DataProvider>
         </AuthProvider>

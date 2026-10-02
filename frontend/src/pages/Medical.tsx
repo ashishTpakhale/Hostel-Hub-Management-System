@@ -4,8 +4,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
+import { API_BASE } from "@/lib/api";
 
-const API_BASE = "https://hostel-hub-management-system-production.up.railway.app";
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
 const Medical = () => {
@@ -44,7 +44,7 @@ const Medical = () => {
     if (!isAdmin) return;
     try {
       const token = localStorage.getItem("access_token");
-      const res = await fetch(`${API_BASE}/api/medical/students`, { headers: { Authorization: token ? `Bearer ${token}` : "" } });
+      const res = await fetch(`${API_BASE}/api/medical/student-records`, { headers: { Authorization: token ? `Bearer ${token}` : "" } });
       if (!res.ok) throw new Error("Failed to fetch students");
       const data = await res.json();
       setStudents(data);
@@ -144,7 +144,7 @@ const Medical = () => {
     if (err) return toast({ title: "Validation", description: err, variant: "destructive" });
     try {
       const token = localStorage.getItem("access_token");
-      const res = await fetch(`${API_BASE}/api/medical/students`, {
+      const res = await fetch(`${API_BASE}/api/medical/student-records`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: token ? `Bearer ${token}` : "" },
         body: JSON.stringify(newStudent),
@@ -172,7 +172,7 @@ const Medical = () => {
     if (err) return toast({ title: "Validation", description: err, variant: "destructive" });
     try {
       const token = localStorage.getItem("access_token");
-      const res = await fetch(`${API_BASE}/api/medical/students/${editingStudentId}`, {
+      const res = await fetch(`${API_BASE}/api/medical/student-records/${editingStudentId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: token ? `Bearer ${token}` : "" },
         body: JSON.stringify(editingStudentValues),
@@ -190,7 +190,7 @@ const Medical = () => {
     if (!confirm("Delete this student record?")) return;
     try {
       const token = localStorage.getItem("access_token");
-      const res = await fetch(`${API_BASE}/api/medical/students/${id}`, { method: "DELETE", headers: { Authorization: token ? `Bearer ${token}` : "" } });
+      const res = await fetch(`${API_BASE}/api/medical/student-records/${id}`, { method: "DELETE", headers: { Authorization: token ? `Bearer ${token}` : "" } });
       if (!res.ok) throw new Error("Failed to delete");
       toast({ title: "Deleted", description: "Student record removed" });
       fetchStudents();

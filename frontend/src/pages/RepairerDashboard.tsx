@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { API_BASE } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import ProfileAvatar from "@/components/ui/ProfileAvatar";
 import {
@@ -33,7 +34,6 @@ import ThemeToggle from "@/components/ui/ThemeToggle";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { IssueModal } from "@/components/IssueModal";
 
-const API_BASE = "https://hostel-hub-management-system-production.up.railway.app";
 
 interface Issue {
   id: number;

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useData } from "@/contexts/DataContext";
+import { API_BASE } from "@/lib/api";
 import { IssueModal } from "@/components/IssueModal";
 import { NoticeForm } from "@/components/NoticeForm";
 import { MessForm } from "@/components/MessForm";
@@ -68,7 +69,6 @@ import { Textarea } from "@/components/ui/textarea";
 // Analytics component (from the canvas code)
 import AdminAnalytics from "@/components/AdminAnalytics";
 
-const API_BASE = "https://hostel-hub-management-system-production.up.railway.app";
 
 const AdminDashboard = () => {
   const [workerFormOpen, setWorkerFormOpen] = useState(false);

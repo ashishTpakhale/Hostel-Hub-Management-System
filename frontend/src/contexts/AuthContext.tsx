@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { API_BASE } from "@/lib/api";
 
-const API_BASE = "https://hostel-hub-management-system-production.up.railway.app";
 
 interface User {
   id: number;
@@ -85,8 +85,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const data = await res.json();
       localStorage.setItem("access_token", data.access);
       setToken(data.access);
-
-      await refreshProfile(); // refresh user after login
+      if (data.user) {
+        setUser(data.user);
+        localStorage.setItem("user", JSON.stringify(data.user));
+      } else {
+        await refreshProfile(data.access);
+      }
 
       return true;
     } catch (err) {
@@ -108,7 +112,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           roomNo: form.roomNo,
         }),
       });
-      return res.ok;
+      if (!res.ok) return false;
+
+      // Signup returns a JWT session, so a new student reaches their dashboard immediately.
+      const data = await res.json();
+      localStorage.setItem("access_token", data.access);
+      setToken(data.access);
+      if (data.user) {
+        setUser(data.user);
+        localStorage.setItem("user", JSON.stringify(data.user));
+      } else {
+        await refreshProfile(data.access);
+      }
+      return true;
     } catch (err) {
       console.error("Signup failed:", err);
       return false;

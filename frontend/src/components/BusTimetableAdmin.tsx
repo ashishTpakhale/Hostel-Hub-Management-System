@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE } from "@/lib/api";
 
 interface Timetable {
   id: number;
@@ -11,16 +12,17 @@ const BusTimetableAdmin: React.FC = () => {
   const [newTimes, setNewTimes] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    fetch("https://hostel-hub-management-system-production.up.railway.app/api/timetable")
+    fetch(`${API_BASE}/api/timetable`)
       .then((res) => res.json())
       .then(setRoutes)
       .catch(console.error);
   }, []);
 
   const handleUpdate = async (routeName: string) => {
-    const res = await fetch("https://hostel-hub-management-system-production.up.railway.app/api/timetable", {
+    const token = localStorage.getItem("access_token");
+    const res = await fetch(`${API_BASE}/api/timetable`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: token ? `Bearer ${token}` : "" },
       body: JSON.stringify({
         route_name: routeName,
         schedule: newTimes[routeName] || "",

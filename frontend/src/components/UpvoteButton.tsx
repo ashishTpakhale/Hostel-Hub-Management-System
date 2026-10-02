@@ -14,7 +14,7 @@ export const UpvoteButton = ({ issueId, upvotes, voters }: UpvoteButtonProps) =>
   const { user } = useAuth();
   const { upvoteIssue, downvoteIssue } = useData();
   
-  const hasVoted = user && voters ? voters.includes(user.id) : false;
+  const hasVoted = user ? voters.includes(user.email) : false;
 
   const handleUpvote = async () => {
     if (!user) {
@@ -28,13 +28,13 @@ export const UpvoteButton = ({ issueId, upvotes, voters }: UpvoteButtonProps) =>
 
     try {
       if (hasVoted) {
-        await downvoteIssue(issueId, user.id);
+        await downvoteIssue(issueId);
         toast({
           title: 'Vote removed',
           description: 'Your vote has been removed',
         });
       } else {
-        await upvoteIssue(issueId, user.id);
+        await upvoteIssue(issueId);
         toast({
           title: 'Upvoted',
           description: 'You have upvoted this issue',

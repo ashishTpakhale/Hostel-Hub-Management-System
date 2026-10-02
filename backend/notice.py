@@ -51,3 +51,14 @@ def update_notice(notice_id):
     notice.content = content
     db.session.commit()
     return jsonify({"message": "Notice updated successfully"}), 200
+
+
+@notices_bp.delete("/notices/<int:notice_id>")
+@role_required("admin")
+def delete_notice(notice_id):
+    notice = Notice.query.get(notice_id)
+    if not notice:
+        return jsonify({"error": "Notice not found"}), 404
+    db.session.delete(notice)
+    db.session.commit()
+    return jsonify({"message": "Notice deleted"}), 200

@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { toast } from "sonner";
+import { API_BASE } from "@/lib/api";
 
 interface WorkerFormProps {
   open: boolean;
@@ -36,7 +37,7 @@ export const WorkerForm = ({ open, onOpenChange }: WorkerFormProps) => {
 
   const fetchCategories = async () => {
     try {
-      const res = await fetch("https://hostel-hub-management-system-production.up.railway.app/api/categories");
+      const res = await fetch(`${API_BASE}/api/categories`);
       if (!res.ok) throw new Error("Failed to fetch categories");
       const data = await res.json();
       setCategories(data);
@@ -50,7 +51,7 @@ export const WorkerForm = ({ open, onOpenChange }: WorkerFormProps) => {
     setLoading(true);
     try {
       const token = localStorage.getItem("access_token");
-      const res = await fetch("https://hostel-hub-management-system-production.up.railway.app/auth/create-worker", {
+      const res = await fetch(`${API_BASE}/auth/create-worker`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

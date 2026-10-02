@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { StatusBadge } from "./StatusBadge";
 import { Issue } from "@/contexts/DataContext";
+import { API_BASE } from "@/lib/api";
 import { useData } from "@/contexts/DataContext";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
@@ -27,9 +28,10 @@ export const IssueModal = ({ issue, open, onOpenChange }: IssueModalProps) => {
   const fetchAnalysis = async (title: string, description: string) => {
     try {
       setLoading(true);
-      const res = await fetch("https://hostel-hub-management-system-production.up.railway.app/analyze_issue", {
+      const token = localStorage.getItem("access_token");
+      const res = await fetch(`${API_BASE}/analyze_issue`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: token ? `Bearer ${token}` : "" },
         body: JSON.stringify({ title, description }),
       });
 

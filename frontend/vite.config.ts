@@ -13,12 +13,14 @@ export default defineConfig(({ mode }) => ({
     allowedHosts: ['hostel-hub-management-system.onrender.com'],
     proxy: {
       "/api": {
-        target: "https://hostel-hub-management-system-production.up.railway.app",
+        target: "http://127.0.0.1:5000",
+        // target: "https://hostel-hub-management-system-production.up.railway.app",
         changeOrigin: true,
         secure: false,
       },
       "/auth": {
-        target: "https://hostel-hub-management-system-production.up.railway.app",
+        target: "http://127.0.0.1:5000",
+        // target: "https://hostel-hub-management-system-production.up.railway.app",
         changeOrigin: true,
         secure: false,
       },
