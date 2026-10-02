@@ -1,9 +1,33 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt
-from model import db, Mess
+from flask_jwt_extended import jwt_required, get_jwt, get_jwt_identity
+from model import db, Mess, MealMenu, MealRating
+from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 import datetime
 
 mess_bp = Blueprint("mess", __name__, url_prefix="/api")
+MEAL_TYPES = {"breakfast", "lunch", "snacks", "dinner"}
+
+
+def meal_payload(meal):
+    average, count = db.session.query(func.avg(MealRating.rating), func.count(MealRating.id)).filter(
+        MealRating.meal_menu_id == meal.id
+    ).one()
+    return {
+        "id": meal.id,
+        "date": meal.service_date.isoformat(),
+        "mealType": meal.meal_type,
+        "menuText": meal.menu_text,
+        "averageRating": round(float(average), 2) if average is not None else None,
+        "ratingCount": int(count or 0),
+    }
+
+
+def parse_service_date(value):
+    try:
+        return datetime.date.fromisoformat(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def role_required(*roles):
@@ -35,6 +59,72 @@ def get_mess_schedule():
         }
         for item in mess_items
     ])
+
+
+@mess_bp.get("/mess/daily")
+def get_daily_meals():
+    service_date = parse_service_date(request.args.get("date")) or datetime.date.today()
+    meals = MealMenu.query.filter_by(service_date=service_date).order_by(MealMenu.meal_type).all()
+    return jsonify([meal_payload(meal) for meal in meals])
+
+
+@mess_bp.post("/mess/daily")
+@role_required("admin")
+def create_or_update_daily_meal():
+    data = request.get_json() or {}
+    service_date = parse_service_date(data.get("date"))
+    meal_type = (data.get("mealType") or "").strip().lower()
+    menu_text = (data.get("menuText") or "").strip()
+    if not service_date or meal_type not in MEAL_TYPES or not menu_text:
+        return jsonify({"error": "date, mealType, and menuText are required"}), 400
+
+    meal = MealMenu.query.filter_by(service_date=service_date, meal_type=meal_type).first()
+    if meal:
+        meal.menu_text = menu_text
+    else:
+        meal = MealMenu(
+            service_date=service_date,
+            meal_type=meal_type,
+            menu_text=menu_text,
+            created_by=int(get_jwt_identity()),
+        )
+        db.session.add(meal)
+    db.session.commit()
+    return jsonify(meal_payload(meal)), 200
+
+
+@mess_bp.post("/mess/daily/<int:meal_id>/ratings")
+@role_required("student")
+def rate_daily_meal(meal_id):
+    data = request.get_json() or {}
+    rating = data.get("rating")
+    if not isinstance(rating, int) or isinstance(rating, bool) or not 1 <= rating <= 5:
+        return jsonify({"error": "rating must be an integer from 1 to 5"}), 400
+
+    meal = MealMenu.query.get(meal_id)
+    if not meal:
+        return jsonify({"error": "Meal not found"}), 404
+    rating_record = MealRating(meal_menu_id=meal.id, user_id=int(get_jwt_identity()), rating=rating)
+    try:
+        db.session.add(rating_record)
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"error": "You have already rated this meal"}), 409
+    return jsonify(meal_payload(meal)), 201
+
+
+@mess_bp.get("/mess/ratings/history")
+def meal_rating_history():
+    try:
+        days = min(max(int(request.args.get("days", 7)), 1), 30)
+    except ValueError:
+        return jsonify({"error": "days must be a number"}), 400
+    start_date = datetime.date.today() - datetime.timedelta(days=days - 1)
+    meals = MealMenu.query.filter(MealMenu.service_date >= start_date).order_by(
+        MealMenu.service_date.desc(), MealMenu.meal_type
+    ).all()
+    return jsonify([meal_payload(meal) for meal in meals])
 
 
 @mess_bp.post("/mess")

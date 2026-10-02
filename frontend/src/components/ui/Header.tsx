@@ -13,6 +13,7 @@ export default function Header() {
   const closeMenu = () => setMenuOpen(false);
   const navigation = <>
     <NavLink to="/" end className={linkClass} onClick={closeMenu}>Today</NavLink>
+    <NavLink to="/mess" className={linkClass} onClick={closeMenu}>Mess</NavLink>
     <NavLink to="/bus-timetable" className={linkClass} onClick={closeMenu}>Timetable</NavLink>
     {isAuthenticated && <NavLink to="/dashboard" className={linkClass} onClick={closeMenu}>Dashboard</NavLink>}
   </>;

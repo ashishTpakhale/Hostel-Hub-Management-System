@@ -52,6 +52,41 @@ class Mess(db.Model):
     __table_args__ = (db.UniqueConstraint('day', name='unique_day'),)
 
 
+class MealMenu(db.Model):
+    """A dated meal that can be rated independently of the legacy weekly schedule."""
+    __tablename__ = "meal_menu"
+
+    id = db.Column(db.Integer, primary_key=True)
+    service_date = db.Column(db.Date, nullable=False, index=True)
+    meal_type = db.Column(db.String(20), nullable=False)
+    menu_text = db.Column(db.Text, nullable=False, default="")
+    created_by = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint("service_date", "meal_type", name="unique_meal_menu_per_service"),
+    )
+
+
+class MealRating(db.Model):
+    __tablename__ = "meal_rating"
+
+    id = db.Column(db.Integer, primary_key=True)
+    meal_menu_id = db.Column(db.Integer, db.ForeignKey("meal_menu.id"), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
+    rating = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow)
+
+    meal = db.relationship("MealMenu", backref=db.backref("ratings", lazy=True, cascade="all, delete-orphan"))
+    user = db.relationship("User", backref=db.backref("meal_ratings", lazy=True))
+
+    __table_args__ = (
+        db.UniqueConstraint("meal_menu_id", "user_id", name="unique_rating_per_student_meal"),
+        db.CheckConstraint("rating >= 1 AND rating <= 5", name="meal_rating_between_one_and_five"),
+    )
+
+
 class Doctor(db.Model):
     __tablename__ = 'doctor'
     id = db.Column(db.Integer, primary_key=True)
