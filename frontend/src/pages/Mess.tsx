@@ -1,4 +1,4 @@
-import { Star, Utensils } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Clock3, Star, Utensils } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { mealMeta, w26MessMenu } from "@/lib/w26MessMenu";
 
 type MealMenu = { id: number; date: string; mealType: string; menuText: string; averageRating: number | null; ratingCount: number };
 const mealTypes = ["breakfast", "lunch", "snacks", "dinner"];
@@ -21,6 +22,7 @@ export default function Mess() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [form, setForm] = useState({ date: today, mealType: "breakfast", menuText: "" });
+  const [selectedWeekday, setSelectedWeekday] = useState(new Intl.DateTimeFormat("en-IN", { weekday: "long" }).format(new Date()));
 
   const loadMeals = useCallback(async () => {
     setLoading(true);
@@ -61,6 +63,10 @@ export default function Mess() {
     setHistory((current) => current.map((meal) => meal.id === mealId ? payload : meal));
   };
 
+  const selectedWeeklyMenu = w26MessMenu.find((menu) => menu.day === selectedWeekday) ?? w26MessMenu[0];
+  const selectedDayIndex = w26MessMenu.findIndex((menu) => menu.day === selectedWeeklyMenu.day);
+  const moveDay = (direction: -1 | 1) => setSelectedWeekday(w26MessMenu[(selectedDayIndex + direction + w26MessMenu.length) % w26MessMenu.length].day);
+
   const publishMeal = async (event: React.FormEvent) => {
     event.preventDefault();
     const token = localStorage.getItem("access_token");
@@ -83,6 +89,12 @@ export default function Mess() {
   return <main className="mx-auto max-w-6xl space-y-6 px-4 py-8">
     <div><p className="text-sm text-muted-foreground">Public information</p><h1 className="flex items-center gap-2 text-3xl font-bold"><Utensils className="h-7 w-7 text-primary" />Mess menu & ratings</h1><p className="mt-2 text-muted-foreground">See what is being served and rate a meal once after you have eaten it.</p></div>
     {message && <p className="rounded-md border bg-secondary p-3 text-sm" role="status">{message}</p>}
+
+    <section className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+      <div className="bg-gradient-to-r from-primary to-primary/75 px-5 py-6 text-primary-foreground"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-sm font-medium text-primary-foreground/80">Reference timetable · W26 Aug–Sept</p><h2 className="mt-1 flex items-center gap-2 text-2xl font-bold"><CalendarDays className="h-6 w-6" />Weekly food plan</h2><p className="mt-2 max-w-2xl text-sm text-primary-foreground/90">A clear, swipe-friendly version of the supplied hostel menu. Live meals and ratings below are the current source of truth.</p></div><span className="rounded-full bg-white/15 px-3 py-1 text-sm">4 meals · 7 days</span></div></div>
+      <div className="border-b bg-background p-3"><div className="flex gap-2 overflow-x-auto pb-1">{w26MessMenu.map((menu) => <button key={menu.day} type="button" onClick={() => setSelectedWeekday(menu.day)} className={`min-w-20 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${selectedWeeklyMenu.day === menu.day ? "bg-primary text-primary-foreground shadow-sm" : "bg-secondary text-secondary-foreground hover:bg-secondary/70"}`}>{menu.day.slice(0, 3)}</button>)}</div></div>
+      <div className="p-5"><div className="mb-4 flex items-center justify-between"><button type="button" className="rounded-md p-2 hover:bg-secondary" onClick={() => moveDay(-1)} aria-label="Previous day"><ChevronLeft className="h-5 w-5" /></button><div className="text-center"><p className="text-xl font-bold">{selectedWeeklyMenu.day}</p><p className="text-sm text-muted-foreground">W26 reference menu</p></div><button type="button" className="rounded-md p-2 hover:bg-secondary" onClick={() => moveDay(1)} aria-label="Next day"><ChevronRight className="h-5 w-5" /></button></div><div className="grid gap-3 md:grid-cols-2">{mealTypes.map((mealType) => <article key={mealType} className="rounded-xl border bg-background p-4"><div className="flex items-center justify-between gap-3"><h3 className="font-semibold capitalize">{mealMeta[mealType as keyof typeof mealMeta].label}</h3><span className="flex items-center gap-1 text-xs text-muted-foreground"><Clock3 className="h-3.5 w-3.5" />{mealMeta[mealType as keyof typeof mealMeta].time}</span></div><p className="mt-3 text-sm leading-6 text-muted-foreground">{selectedWeeklyMenu[mealType as keyof typeof mealMeta]}</p></article>)}</div></div>
+    </section>
 
     {user?.role === "admin" && <Card><CardHeader><CardTitle>Publish today’s meal</CardTitle></CardHeader><CardContent><form onSubmit={publishMeal} className="grid gap-3 md:grid-cols-4"><Input type="date" value={form.date} onChange={(event) => setForm({ ...form, date: event.target.value })} required /><select className="rounded-md border bg-background px-3" value={form.mealType} onChange={(event) => setForm({ ...form, mealType: event.target.value })}>{mealTypes.map((type) => <option key={type} value={type}>{type[0].toUpperCase() + type.slice(1)}</option>)}</select><Textarea className="md:col-span-2" placeholder="Example: Dal, rice, salad" value={form.menuText} onChange={(event) => setForm({ ...form, menuText: event.target.value })} required /><Button type="submit" className="md:col-span-4 md:w-fit">Publish meal</Button></form></CardContent></Card>}
 
