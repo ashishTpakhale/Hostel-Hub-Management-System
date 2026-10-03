@@ -16,8 +16,11 @@ export default function Header() {
     <NavLink to="/mess" className={linkClass} onClick={closeMenu}>Mess</NavLink>
     <NavLink to="/facilities" className={linkClass} onClick={closeMenu}>Facilities</NavLink>
     <NavLink to="/night-canteen" className={linkClass} onClick={closeMenu}>Night Canteen</NavLink>
+    <NavLink to="/marketplace" className={linkClass} onClick={closeMenu}>Marketplace</NavLink>
+    <NavLink to="/community" className={linkClass} onClick={closeMenu}>Community</NavLink>
     <NavLink to="/bus-timetable" className={linkClass} onClick={closeMenu}>Timetable</NavLink>
     {isAuthenticated && <NavLink to="/dashboard" className={linkClass} onClick={closeMenu}>Dashboard</NavLink>}
+    {isAuthenticated && <NavLink to="/profile" className={linkClass} onClick={closeMenu}>My activity</NavLink>}
   </>;
 
   return <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">

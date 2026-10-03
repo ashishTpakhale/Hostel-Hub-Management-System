@@ -22,6 +22,9 @@ const Medical = lazy(() => import("./pages/Medical"));
 const Mess = lazy(() => import("./pages/Mess"));
 const Facilities = lazy(() => import("./pages/Facilities"));
 const NightCanteen = lazy(() => import("./pages/NightCanteen"));
+const Marketplace = lazy(() => import("./pages/Marketplace"));
+const Community = lazy(() => import("./pages/Community"));
+const Profile = lazy(() => import("./pages/Profile"));
 
 const queryClient = new QueryClient();
 
@@ -92,6 +95,9 @@ const App = () => {
                 <Route path="/mess" element={<Mess />} />
                 <Route path="/facilities" element={<Facilities />} />
                 <Route path="/night-canteen" element={<NightCanteen />} />
+                <Route path="/marketplace" element={<Marketplace />} />
+                <Route path="/community" element={<Community />} />
+                <Route path="/profile" element={<ProtectedRoute allowedRoles={["student", "admin", "worker", "nc_manager"]}><Profile /></ProtectedRoute>} />
                 <Route
                   path="/admin/bus-timetable"
                   element={

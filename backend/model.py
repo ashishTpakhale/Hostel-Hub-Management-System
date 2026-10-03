@@ -149,6 +149,53 @@ class NightCanteenItem(db.Model):
     __table_args__ = (db.CheckConstraint("price >= 0", name="night_canteen_item_price_nonnegative"),)
 
 
+class MarketplaceListing(db.Model):
+    __tablename__ = "marketplace_listing"
+    id = db.Column(db.Integer, primary_key=True)
+    seller_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
+    title = db.Column(db.String(150), nullable=False)
+    category = db.Column(db.String(60), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    price = db.Column(db.Numeric(10, 2), nullable=False)
+    condition = db.Column(db.String(40), nullable=False)
+    listing_type = db.Column(db.String(20), nullable=False, default="sale")
+    negotiable = db.Column(db.Boolean, nullable=False, default=False)
+    status = db.Column(db.String(20), nullable=False, default="active")
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow)
+    seller = db.relationship("User")
+
+
+class MarketplaceMessage(db.Model):
+    __tablename__ = "marketplace_message"
+    id = db.Column(db.Integer, primary_key=True)
+    listing_id = db.Column(db.Integer, db.ForeignKey("marketplace_listing.id"), nullable=False, index=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    offer = db.Column(db.Numeric(10, 2), nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow)
+    listing = db.relationship("MarketplaceListing", backref=db.backref("messages", lazy=True, cascade="all, delete-orphan"))
+    sender = db.relationship("User")
+
+
+class Club(db.Model):
+    __tablename__ = "club"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+    description = db.Column(db.Text, nullable=False)
+    lead_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+    lead = db.relationship("User")
+
+
+class CommunityMessage(db.Model):
+    __tablename__ = "community_message"
+    id = db.Column(db.Integer, primary_key=True)
+    author_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    flagged = db.Column(db.Boolean, nullable=False, default=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow)
+    author = db.relationship("User")
+
+
 class Doctor(db.Model):
     __tablename__ = 'doctor'
     id = db.Column(db.Integer, primary_key=True)

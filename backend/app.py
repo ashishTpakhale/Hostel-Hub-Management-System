@@ -17,6 +17,9 @@ from bus_timetable import bus_bp
 from medical import medical_bp
 from facilities import facilities_bp
 from night_canteen import night_canteen_bp
+from marketplace import marketplace_bp
+from community import community_bp
+from profiles import profiles_bp
 import requests
 import json
 import re
@@ -35,7 +38,7 @@ allowed_origins = [
 CORS(app, supports_credentials=True, expose_headers=["Authorization"], origins=allowed_origins)
 
 basedir = os.path.abspath(os.path.dirname(__file__))
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(basedir, "database.db")
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///" + os.path.join(basedir, "database.db"))
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["NIGHT_CANTEEN_UPLOAD_DIR"] = os.getenv("NIGHT_CANTEEN_UPLOAD_DIR", os.path.join(basedir, "uploads", "night-canteen"))
 
@@ -59,6 +62,13 @@ app.register_blueprint(bus_bp)
 app.register_blueprint(medical_bp)
 app.register_blueprint(facilities_bp)
 app.register_blueprint(night_canteen_bp)
+app.register_blueprint(marketplace_bp)
+app.register_blueprint(community_bp)
+app.register_blueprint(profiles_bp)
+
+@app.get("/health")
+def health():
+    return jsonify({"status": "ok"})
 
 @app.get("/api/categories")
 def get_categories():
@@ -84,6 +94,10 @@ def analytics():
     total_workers = int(db.session.query(func.count(WorkerInfo.id)).scalar() or 0)
 
     total_notices = int(db.session.query(func.count(Notice.id)).scalar() or 0)
+    from model import MarketplaceListing, NightCanteenMenu, CommunityMessage
+    marketplace_active = int(db.session.query(func.count(MarketplaceListing.id)).filter(MarketplaceListing.status == "active").scalar() or 0)
+    night_canteen_contributions = int(db.session.query(func.count(NightCanteenMenu.id)).scalar() or 0)
+    community_messages = int(db.session.query(func.count(CommunityMessage.id)).scalar() or 0)
     total_doctors = int(db.session.query(func.count(Doctor.id)).scalar() or 0)
     doctors_available_today = int(db.session.query(func.count(Doctor.id)).filter(Doctor.available_today == True).scalar() or 0)
     student_medical = int(db.session.query(func.count(StudentMedical.id)).scalar() or 0)
@@ -148,6 +162,9 @@ def analytics():
         'doctors': total_doctors,
         'doctors_available_today': doctors_available_today,
         'student_medical_records': student_medical,
+        'marketplace_active_listings': marketplace_active,
+        'night_canteen_contributions': night_canteen_contributions,
+        'community_messages': community_messages,
     }
 
     series = {

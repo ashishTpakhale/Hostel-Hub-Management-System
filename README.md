@@ -138,3 +138,10 @@ it empty locally so Vite proxies requests to Flask. Never commit real `.env` fil
 cd backend
 python -m unittest discover -s tests
 ```
+
+### Production checklist
+
+- Run database migrations before deploying: `flask db upgrade`.
+- Set `JWT_SECRET_KEY`, `FRONTEND_ORIGINS`, and `VITE_API_BASE_URL` in the host environment.
+- Use PostgreSQL and object storage for production; SQLite and local Night Canteen uploads are for local/demo use.
+- Verify `GET /health` returns `{"status":"ok"}` after deployment.
