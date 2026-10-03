@@ -8,6 +8,7 @@ type Notice = { id: number; title: string; content: string; createdAt: string };
 type MessItem = { id: number; day: string; breakfast: string; lunch: string; snacks: string; dinner: string };
 type Timetable = { id: number; route_name: string; schedule: string };
 type Doctor = { id: number; name: string; available_today: boolean; arrival_time: string | null; leave_time: string | null };
+type Facility = { id: number; name: string; location: string; status: "Available" | "Occupied" | "Closed" | "Maintenance" };
 
 const mealLabels = ["Breakfast", "Lunch", "Snacks", "Dinner"] as const;
 const mealKeys = ["breakfast", "lunch", "snacks", "dinner"] as const;
@@ -23,6 +24,7 @@ const Landing = () => {
   const [messItems, setMessItems] = useState<MessItem[]>([]);
   const [timetables, setTimetables] = useState<Timetable[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [facilities, setFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -34,12 +36,14 @@ const Landing = () => {
           fetchPublicList<MessItem>("/api/mess"),
           fetchPublicList<Timetable>("/api/timetable"),
           fetchPublicList<Doctor>("/api/medical/doctors"),
+          fetchPublicList<Facility>("/api/facilities"),
         ]);
-        const [noticesResult, messResult, timetableResult, doctorsResult] = results;
+        const [noticesResult, messResult, timetableResult, doctorsResult, facilitiesResult] = results;
         if (noticesResult.status === "fulfilled") setNotices(noticesResult.value);
         if (messResult.status === "fulfilled") setMessItems(messResult.value);
         if (timetableResult.status === "fulfilled") setTimetables(timetableResult.value);
         if (doctorsResult.status === "fulfilled") setDoctors(doctorsResult.value);
+        if (facilitiesResult.status === "fulfilled") setFacilities(facilitiesResult.value);
         if (results.some((result) => result.status === "rejected")) {
           setError(true);
           console.error("One or more public dashboard requests failed", results);
@@ -73,11 +77,11 @@ const Landing = () => {
       <section aria-label="Daily hostel status" className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader><CardTitle className="flex items-center gap-2"><Coffee className="h-5 w-5 text-primary" />Night Canteen</CardTitle></CardHeader>
-          <CardContent><p className="text-sm text-muted-foreground">No Night Canteen menu has been published yet. Verified student contributions will appear here once the Night Canteen module is released.</p></CardContent>
+          <CardContent><p className="text-sm text-muted-foreground">See today’s menu, contributor attribution, and sold-out updates.</p><Link to="/night-canteen" className="mt-4 inline-block text-sm font-medium text-primary hover:underline">View Night Canteen →</Link></CardContent>
         </Card>
         <Card>
           <CardHeader><CardTitle className="flex items-center gap-2"><DoorOpen className="h-5 w-5 text-primary" />Facilities</CardTitle></CardHeader>
-          <CardContent><p className="text-sm text-muted-foreground">Facility availability has not been published yet. Live updates for hostel facilities will appear here when the Facilities module is released.</p></CardContent>
+          <CardContent><p className="text-sm text-muted-foreground">{facilities.length ? `${facilities.filter((facility) => facility.status === "Available").length} of ${facilities.length} facilities currently marked available` : "Facility availability has not been published yet."}</p><Link to="/facilities" className="mt-4 inline-block text-sm font-medium text-primary hover:underline">View facility status →</Link></CardContent>
         </Card>
       </section>
 

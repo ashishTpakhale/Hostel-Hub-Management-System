@@ -15,6 +15,8 @@ from mess import mess_bp
 from werkzeug.security import generate_password_hash, check_password_hash
 from bus_timetable import bus_bp
 from medical import medical_bp
+from facilities import facilities_bp
+from night_canteen import night_canteen_bp
 import requests
 import json
 import re
@@ -35,6 +37,7 @@ CORS(app, supports_credentials=True, expose_headers=["Authorization"], origins=a
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(basedir, "database.db")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["NIGHT_CANTEEN_UPLOAD_DIR"] = os.getenv("NIGHT_CANTEEN_UPLOAD_DIR", os.path.join(basedir, "uploads", "night-canteen"))
 
 jwt_secret = os.getenv("JWT_SECRET_KEY")
 if not jwt_secret:
@@ -54,6 +57,8 @@ app.register_blueprint(notices_bp)
 app.register_blueprint(mess_bp)
 app.register_blueprint(bus_bp)
 app.register_blueprint(medical_bp)
+app.register_blueprint(facilities_bp)
+app.register_blueprint(night_canteen_bp)
 
 @app.get("/api/categories")
 def get_categories():

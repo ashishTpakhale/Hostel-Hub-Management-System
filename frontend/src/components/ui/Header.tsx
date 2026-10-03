@@ -14,6 +14,8 @@ export default function Header() {
   const navigation = <>
     <NavLink to="/" end className={linkClass} onClick={closeMenu}>Today</NavLink>
     <NavLink to="/mess" className={linkClass} onClick={closeMenu}>Mess</NavLink>
+    <NavLink to="/facilities" className={linkClass} onClick={closeMenu}>Facilities</NavLink>
+    <NavLink to="/night-canteen" className={linkClass} onClick={closeMenu}>Night Canteen</NavLink>
     <NavLink to="/bus-timetable" className={linkClass} onClick={closeMenu}>Timetable</NavLink>
     {isAuthenticated && <NavLink to="/dashboard" className={linkClass} onClick={closeMenu}>Dashboard</NavLink>}
   </>;

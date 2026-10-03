@@ -20,6 +20,8 @@ const BusTimetableView = lazy(() => import("@/components/BusTimetableView"));
 const BusTimetableAdmin = lazy(() => import("@/components/BusTimetableAdmin"));
 const Medical = lazy(() => import("./pages/Medical"));
 const Mess = lazy(() => import("./pages/Mess"));
+const Facilities = lazy(() => import("./pages/Facilities"));
+const NightCanteen = lazy(() => import("./pages/NightCanteen"));
 
 const queryClient = new QueryClient();
 
@@ -88,6 +90,8 @@ const App = () => {
 
                 <Route path="/bus-timetable" element={<BusTimetableView />} />
                 <Route path="/mess" element={<Mess />} />
+                <Route path="/facilities" element={<Facilities />} />
+                <Route path="/night-canteen" element={<NightCanteen />} />
                 <Route
                   path="/admin/bus-timetable"
                   element={
