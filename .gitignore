@@ -8,6 +8,7 @@ backend/.venv/
 backend/__pycache__/
 backend/*.py[cod]
 backend/database.db
+backend/uploads/
 
 # Node/Vite
 frontend/node_modules/
