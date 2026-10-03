@@ -1,10 +1,14 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt, get_jwt_identity
-from model import db, Issue, User
+from model import db, Issue, IssueStatusHistory, User
 import datetime
 from functools import wraps
 
 issues_bp = Blueprint("issues", __name__, url_prefix="/api")
+
+def record_status(issue, status, actor_id):
+    issue.status = status
+    db.session.add(IssueStatusHistory(issue_id=issue.id, status=status, changed_by=actor_id))
 
 def role_required(*roles):
     def wrapper(fn):
@@ -61,6 +65,8 @@ def create_issue():
         created_by=creator.full_name,
     )
     db.session.add(issue)
+    db.session.flush()
+    db.session.add(IssueStatusHistory(issue_id=issue.id, status="Pending", changed_by=creator.id))
     db.session.commit()
     return jsonify({"message": "Issue created", "id": issue.id}), 201
 @issues_bp.route("/issues/<int:issue_id>", methods=["PUT"])
@@ -115,7 +121,7 @@ def update_status(issue_id):
     issue = Issue.query.get_or_404(issue_id)
     if issue.assigned_to != worker_id:
         return jsonify({"error": "Issue is not assigned to you"}), 403
-    issue.status = new_status
+    record_status(issue, new_status, worker_id)
     db.session.commit()
     return jsonify({"message": "Status updated"})
 
@@ -160,6 +166,7 @@ def assign_issue(issue_id):
 
     issue.assigned_to = assignee_id
     issue.assigned_at = datetime.datetime.utcnow()
+    record_status(issue, "Pending", int(get_jwt_identity()))
     db.session.commit()
 
     return jsonify({
@@ -199,6 +206,7 @@ def unassign_issue(issue_id):
     issue = Issue.query.get_or_404(int(issue_id))
     issue.assigned_to = None
     issue.assigned_at = None
+    db.session.add(IssueStatusHistory(issue_id=issue.id, status="Unassigned", changed_by=int(get_jwt_identity())))
     db.session.commit()
     return jsonify({"message": "Worker unassigned successfully"}), 200
 
@@ -238,7 +246,7 @@ def delete_issue(issue_id):
     if not (is_owner or is_admin):
         return jsonify({"error": "Forbidden"}), 403
 
-    issue.status = "Cancelled"
+    record_status(issue, "Cancelled", req_user.id if req_user else None)
 
     issue.assigned_to = None
     issue.assigned_at = None
@@ -246,3 +254,11 @@ def delete_issue(issue_id):
     db.session.commit()
 
     return jsonify({"message": "Issue deleted (cancelled)", "id": issue.id}), 200
+
+@issues_bp.get("/issues/<int:issue_id>/history")
+@jwt_required()
+def issue_history(issue_id):
+    issue = db.session.get(Issue, issue_id)
+    if not issue:
+        return jsonify({"error": "Issue not found"}), 404
+    return jsonify([{"status": event.status, "changedAt": event.changed_at.isoformat(), "changedBy": event.actor.full_name if event.actor else "System"} for event in IssueStatusHistory.query.filter_by(issue_id=issue.id).order_by(IssueStatusHistory.changed_at).all()])
